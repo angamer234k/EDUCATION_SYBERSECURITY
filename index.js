@@ -208,7 +208,7 @@
     };
 
     // Expose globally
-    global.SessionNuker = SessionNuker;
+    global.index = index;
 
     // Optional auto-execute: you can set a flag or just provide the function
     // For safety, nothing runs automatically. User must call SessionNuker.logoutFromEverything()
